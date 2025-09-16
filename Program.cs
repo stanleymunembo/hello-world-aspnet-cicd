@@ -33,7 +33,14 @@ app.MapGet("/api/info", () => new {
     MachineName = Environment.MachineName
 })
     .WithName("GetInfo");
+app.MapGet("/api/time", () => new
+{
+    CurrentTime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC"),
+    TimeZone = "UTC"
+})
+   .WithName("GetCurrentTime");
 
+   
 app.Run();
 
 // Make the implicit Program class public so test projects can access it
