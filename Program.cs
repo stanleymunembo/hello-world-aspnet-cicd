@@ -16,7 +16,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Our Hello World endpoints (without WithOpenApi)
-app.MapGet("/", () => "Hello World from ASP.NET Core - Updated!")
+app.MapGet("/", () => "Hello World from ASP.NET Core v2- Updated!")
     .WithName("GetHelloWorld");
 
 app.MapGet("/health", () => new {
