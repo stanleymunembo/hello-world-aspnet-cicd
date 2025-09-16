@@ -2,46 +2,53 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
     
+    - name: Debug - Show repository structure
+      run: |
+        echo "🔍 Repository structure:"
+        ls -la
+        echo "📁 Looking for project files:"
+        find . -name "*.csproj" -o -name "*.sln" | sort
+        echo "📝 Content of root directory:"
+        ls -la ./
+    
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        echo "🔄 Restoring dependencies..."
+        dotnet restore --verbosity normal
     
     - name: Build
-      run: dotnet build --no-restore --configuration Release
+      run: |
+        echo "🏗️ Building solution..."
+        dotnet build --no-restore --configuration Release --verbosity normal
     
     - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/
+      run: |
+        echo "🧪 Running tests..."
+        dotnet test --no-build --configuration Release --verbosity normal --logger "console;verbosity=detailed"
     
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results
-        path: TestResults/*.trx
-    
-    - name: Publish
-      run: dotnet publish HelloWorldApp/HelloWorldApp.csproj --configuration Release --output ./publish
-    
-    - name: Upload published app
-      uses: actions/upload-artifact@v4
-      with:
-        name: published-app
-        path: ./publish/
+    - name: List build outputs
+      if: success()
+      run: |
+        echo "📦 Build outputs:"
+        find . -name "bin" -type d | head -10
+        find . -path "*/bin/Release/*" -name "*.dll" | head -10
 
   deploy-staging:
     runs-on: ubuntu-latest
@@ -49,15 +56,22 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
-    - name: Download published app
-      uses: actions/download-artifact@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
       with:
-        name: published-app
-        path: ./app
+        dotnet-version: '8.0.x'
+    
+    - name: Publish application
+      run: |
+        echo "📦 Publishing application..."
+        dotnet publish HelloWorldApp/HelloWorldApp.csproj --configuration Release --output ./publish --verbosity normal
     
     - name: Deploy to Staging
       run: |
         echo "🚀 Deploying to staging environment..."
-        echo "📦 Deployed files:"
-        ls -la ./app
+        echo "📁 Published files:"
+        ls -la ./publish/
         echo "✅ Staging deployment completed!"
